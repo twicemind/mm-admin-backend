@@ -1,0 +1,18 @@
+# CODEOWNERS file for mm-admin-backend
+# These owners will be the default owners for everything in the repo.
+# Unless a later match takes precedence, these users will be requested 
+# for review when someone opens a pull request.
+
+# Default owners for everything in the repo
+* @herfortt
+
+# GitHub Actions workflows
+/.github/ @herfortt
+
+# Configuration files
+*.json @herfortt
+*.yml @herfortt
+*.yaml @herfortt
+
+# Documentation
+*.md @herfortt
