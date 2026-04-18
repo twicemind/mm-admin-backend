@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - develop
   workflow_dispatch:
     inputs:
       version_bump:
@@ -64,31 +65,44 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
           
+      - name: Determine release type
+        id: release_type
+        run: |
+          if [[ "${{ github.ref_name }}" == "develop" ]]; then
+            echo "version_tag=${{ steps.bump.outputs.new_version }}-rc" >> $GITHUB_OUTPUT
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "release_suffix=-rc" >> $GITHUB_OUTPUT
+          else
+            echo "version_tag=${{ steps.bump.outputs.new_version }}" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "release_suffix=" >> $GITHUB_OUTPUT
+          fi
+          
       - name: Commit version bump
         run: |
           git add package.json
-          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}${{ steps.release_type.outputs.release_suffix }}"
           
       - name: Create tag
         run: |
-          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release v${{ steps.bump.outputs.new_version }}"
+          git tag -a "v${{ steps.release_type.outputs.version_tag }}" -m "Release v${{ steps.release_type.outputs.version_tag }}"
           
       - name: Push changes
         run: |
           git push origin ${{ github.ref_name }}
-          git push origin "v${{ steps.bump.outputs.new_version }}"
+          git push origin "v${{ steps.release_type.outputs.version_tag }}"
           
       - name: Create Release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.bump.outputs.new_version }}
-          release_name: Release v${{ steps.bump.outputs.new_version }}
+          tag_name: v${{ steps.release_type.outputs.version_tag }}
+          release_name: Release v${{ steps.release_type.outputs.version_tag }}
           body: |
-            Release v${{ steps.bump.outputs.new_version }}
+            Release v${{ steps.release_type.outputs.version_tag }}
             
             Changes in this release:
             ${{ github.event.head_commit.message }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.release_type.outputs.is_prerelease }}
