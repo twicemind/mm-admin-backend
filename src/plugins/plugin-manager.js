@@ -66,7 +66,11 @@ class PluginManager {
     plugin.registerRoutes(pluginRouter);
     
     const pluginData = this.registry.get(pluginName);
-    const apiPrefix = pluginData.backend.apiPrefix || `/api/plugins/${pluginName}`;
+    // Remove /api prefix if present since router is already mounted under /api
+    let apiPrefix = pluginData.backend.apiPrefix || `/plugins/${pluginName}`;
+    if (apiPrefix.startsWith('/api/')) {
+      apiPrefix = apiPrefix.substring(4); // Remove '/api'
+    }
     this.router.use(apiPrefix, pluginRouter);
     
     this.logger.info(`Plugin routes registered: ${apiPrefix}`);
